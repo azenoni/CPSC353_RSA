@@ -7,16 +7,8 @@ def key_gen(p=1983499883, a=48651):
 	return public_key, secret_key
 
 def sign_message(m, p=1983499883,a=48651):
-	k = 1
-	while gcd(k,p-1) != 1:
-		k = random.randint(1,p-1)
-	r = mod(a^k,p)
-	y, x = key_gen()
-	H = hashlib.md5()
-	H.update(m)
-	s = mod((H - x*r)*k^(-1),p-1)
-	# if s = 0, start over 
-	if s == 0:
+	s = 0
+	while(s == 0)
 		k = 1
 		while gcd(k,p-1) != 1:
 			k = random.randint(1,p-1)
@@ -25,4 +17,22 @@ def sign_message(m, p=1983499883,a=48651):
 		H = hashlib.md5()
 		H.update(m)
 		s = mod((H - x*r)*k^(-1),p-1)
+	# if s = 0, start over 
+	# if s == 0:
+	# 	k = 1
+	# 	while gcd(k,p-1) != 1:
+	# 		k = random.randint(1,p-1)
+	# 	r = mod(a^k,p)
+	# 	y, x = key_gen()
+	# 	H = hashlib.md5()
+	# 	H.update(m)
+	# 	s = mod((H - x*r)*k^(-1),p-1)
 	return r, s
+
+def verify(r,s,m,a=48651):
+	if (r > 0 and r < p) and (s > 0 and s < (p-1):
+		H = hashlib.md5()
+		y, x = key_gen()
+		if(mod(a^H.update(m),p) == mod(y^r * r^s,p)):
+			return True
+	return False
