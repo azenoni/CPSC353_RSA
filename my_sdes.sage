@@ -16,30 +16,28 @@ def decrypt(c, k):
     pass
 
 def _permute(pt):
-  bits = tobits(pt)
   permuted = []
-  permuted.append(bits[1])
-  permuted.append(bits[5])
-  permuted.append(bits[2])
-  permuted.append(bits[0])
-  permuted.append(bits[3])
-  permuted.append(bits[7])
-  permuted.append(bits[4])
-  permuted.append(bits[6])
-  return frombits(permuted)
+  permuted.append(pt[1])
+  permuted.append(pt[5])
+  permuted.append(pt[2])
+  permuted.append(pt[0])
+  permuted.append(pt[3])
+  permuted.append(pt[7])
+  permuted.append(pt[4])
+  permuted.append(pt[6])
+  return permuted
 
 def _inv_permute(ct):
-  bits = tobits(ct)
   permuted = []
-  permuted.append(bits[3])
-  permuted.append(bits[0])
-  permuted.append(bits[2])
-  permuted.append(bits[4])
-  permuted.append(bits[6])
-  permuted.append(bits[1])
-  permuted.append(bits[7])
-  permuted.append(bits[5])
-  return frombits(permuted)
+  permuted.append(ct[3])
+  permuted.append(ct[0])
+  permuted.append(ct[2])
+  permuted.append(ct[4])
+  permuted.append(ct[6])
+  permuted.append(ct[1])
+  permuted.append(ct[7])
+  permuted.append(ct[5])
+  return permuted
 
 def _feistal(x, k):
     pass
