@@ -4,7 +4,7 @@ import random
 # Private key A = 1042187964
 # Public key B = 1918098439
 
-def sign_message(m, p=1983499883,a=48651):
+def sign_message(m, p=1983499883, a=48651, A=1042187964):
 	s = 0
 	while s == 0:
 		k = 1
