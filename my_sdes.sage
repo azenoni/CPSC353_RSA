@@ -49,28 +49,20 @@ def _feistal(key, r):
           [n[1][0] ^ k[1][0]], [n[1][1] ^ k[1][1]], [n[1][2] ^ k[1][2]], [n[1][3] ^ k[1][3]]])
 
     first_bits = [p[0][0], p[0][3]]
-    first_out = 0
-    for bit in first_bits:
-      out = (out << 1) | bit
+    first_out = frombits(first_bits)
     secont_bits = [p[0][1], p[0][2]]
-    second_out = 0
-    for bit in secont_bits:
-      out = (out << 1) | bit
+    second_out = frombits(second_bits)
     s_0 = s0[first_out][second_out]
 
     first_bits = [p[1][0], p[1][3]]
-    first_out = 0
-    for bit in first_bits:
-      out = (out << 1) | bit
-    secont_bits = [p[1][1], p[1][2]]
-    second_out = 0
-    for bit in secont_bits:
-      out = (out << 1) | bit
+    first_out = frombits(first_bits)
+    second_bits = [p[1][1], p[1][2]]
+    second_out = frombits(second_bits)
     s_1 = s1[first_out][second_out]
 
 
-    s_0_bits = [int(x) for x in list('{0:0b}'.format(s_0))]
-    s_1_bits = [int(x) for x in list('{0:0b}'.format(s_1))]
+    s_0_bits = tobits(s_0)
+    s_1_bits = tobits(s_1)
 
     s_combined = s_0_bits + s_1_bits
     return [s_combined[1],s_combined[3],s_combined[2],s_combined[0]]
