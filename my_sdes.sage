@@ -39,8 +39,44 @@ def _inv_permute(ct):
   permuted.append(ct[5])
   return permuted
 
-def _feistal(x, k):
-    pass
+# Pass in 8-bits, and 4-bits respectively
+def _feistal(key, r):
+    n = ([[r[3],r[0],r[1],r[2]], 
+        [r[1],r[2],r[3],r[0]]])
+    k = ([[key[0],key[1],key[2],key[3]],
+          [key[4],key[5],key[6],key[7]]])
+    p = ([[n[0][0] ^ k[0][0]], [n[0][1] ^ k[0][1]], [n[0][2] ^ k[0][2]], [n[0][3] ^ k[0][3]],
+          [n[1][0] ^ k[1][0]], [n[1][1] ^ k[1][1]], [n[1][2] ^ k[1][2]], [n[1][3] ^ k[1][3]]])
+
+    first_bits = [p[0][0], p[0][3]]
+    first_out = 0
+    for bit in first_bits:
+      out = (out << 1) | bit
+    secont_bits = [p[0][1], p[0][2]]
+    second_out = 0
+    for bit in secont_bits:
+      out = (out << 1) | bit
+    s_0 = s0[first_out][second_out]
+
+    first_bits = [p[1][0], p[1][3]]
+    first_out = 0
+    for bit in first_bits:
+      out = (out << 1) | bit
+    secont_bits = [p[1][1], p[1][2]]
+    second_out = 0
+    for bit in secont_bits:
+      out = (out << 1) | bit
+    s_1 = s1[first_out][second_out]
+
+
+    s_0_bits = [int(x) for x in list('{0:0b}'.format(s_0))]
+    s_1_bits = [int(x) for x in list('{0:0b}'.format(s_1))]
+
+    s_combined = s_0_bits + s_1_bits
+    return [s_combined[1],s_combined[3],s_combined[2],s_combined[0]]
+
+
+# May not be neccessary
 def _inv_feistal(x, k):
     pass
 
