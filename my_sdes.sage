@@ -15,6 +15,16 @@ def encrypt(m, k):
 def decrypt(c, k):
     pass
 
+# Helper functions to use in the cipher blockchaining
+
+# Perform SDES encryption on one 8-bit element
+def _encrypt_single(x, k0, k1):
+    pass
+
+# Perform SDES decryption on one 8-bit element
+def _decrypt_single(y, k0, k1):
+    pass
+
 def _permute(pt):
   permuted = []
   permuted.append(pt[1])
