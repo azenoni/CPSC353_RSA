@@ -16,7 +16,7 @@ def sign_message(m, p=1983499883, a=48651, A=1042187964):
 	# if s = 0, start over 
 	return r, s
 
-def verify(r,s,m,a=48651,B=1918098439):
+def verify(r,s,m,a=48651,B):
 	if r < p:
 		v1 = a.powermod(m,p)
 		v2 = mod(B.powermod(r,p)*r.powermod(s,p),p)
