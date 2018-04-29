@@ -18,56 +18,79 @@ def decrypt(c, k):
 # Helper functions to use in the cipher blockchaining
 # m is cipher message, k0 k1 are keys
 def cipher_blockchain(m,k0,k1):
-
+  encrypted_message = []
+  #assuming m is a string of characters
+  for i in m:
+    num = txt_to_num(i)
+    encrypted_message.append(_encrypt_single(tobits(num),k0,k1))
+  return encrypted_message
+  
 
 # Perform SDES encryption on one 8-bit element
 def _encrypt_single(x, k0, k1):
+  # split message into left and right chunks
   l = x[0:5]
   r = x[5:8]
 
+  # perform first feistal function
   feistel1 = _feistal(k0,r)
 
+  # build the next l function
   l_next = []
   for i in range(4):
     l_next.append(r[i] ^ feistel1[i])
 
+  # set the next r
   r_next = r
 
+  # perform second feistal function
   feistel2 = _feistal(k1,r_next)
 
+  # buil final l
   l_final = []
   for i in range(4):
     l_final.append(r_next[i] ^ feistel2[i])
 
+  # set the final r
   r_final = r_next
 
+  # return combination of l_final and r_final
   return l_final + r_final
 
 # Perform SDES decryption on one 8-bit element
 def _decrypt_single(y, k0, k1):
+  # split message into left and right chunks
   l = y[0:5]
   r = y[5:8]
 
+  # perform a feistel function
   feistel1 = _feistal(k1, r)
 
+  # create the next l
   l_next = []
   for i in range(5):
     l_next.append(r[i] ^ feistel1[i])
 
+  # set next r
   r_next = r
 
+  # perform second feistal function
   feistel2 = _feistal(k0, r_next)
+
+  # get ready for final l
   l_final = []
   for i in range(5):
     l_final.append(r_next[i] ^ feistel2[i])
 
+
+  # prepare last r
   r_final = r_next
 
+  # return combined l and r
   return l_final + r_final
 
 
-    pass
-
+# rotate bits as specified by definition
 def _permute(pt):
   permuted = []
   permuted.append(pt[1])
@@ -80,6 +103,7 @@ def _permute(pt):
   permuted.append(pt[6])
   return permuted
 
+# rotate bits as specified by definition
 def _inv_permute(ct):
   permuted = []
   permuted.append(ct[3])
@@ -94,29 +118,35 @@ def _inv_permute(ct):
 
 # Pass in 8-bits, and 4-bits respectively
 def _feistal(key, r):
+    # create matricies
     n = ([[r[3],r[0],r[1],r[2]], 
         [r[1],r[2],r[3],r[0]]])
     k = ([[key[0],key[1],key[2],key[3]],
           [key[4],key[5],key[6],key[7]]])
+
+    # xor the n and k matricies
     p = ([[n[0][0] ^ k[0][0]], [n[0][1] ^ k[0][1]], [n[0][2] ^ k[0][2]], [n[0][3] ^ k[0][3]],
           [n[1][0] ^ k[1][0]], [n[1][1] ^ k[1][1]], [n[1][2] ^ k[1][2]], [n[1][3] ^ k[1][3]]])
 
+    # perform operations for s box 0
     first_bits = [p[0][0], p[0][3]]
     first_out = frombits(first_bits)
     secont_bits = [p[0][1], p[0][2]]
     second_out = frombits(second_bits)
     s_0 = s0[first_out][second_out]
 
+    # perform operations for s box 1
     first_bits = [p[1][0], p[1][3]]
     first_out = frombits(first_bits)
     second_bits = [p[1][1], p[1][2]]
     second_out = frombits(second_bits)
     s_1 = s1[first_out][second_out]
 
-
+    # convert back to bits
     s_0_bits = tobits(s_0)
     s_1_bits = tobits(s_1)
 
+    # combine s box return values for return
     s_combined = s_0_bits + s_1_bits
     return [s_combined[1],s_combined[3],s_combined[2],s_combined[0]]
 
@@ -156,6 +186,9 @@ def _generate_keys(k10):
     for i in range(8):
         k0p[i] = k0[p8[i]]
         k1p[i] = k1[p8[i]]
+
+    # return keys as a tuple
+    return k0p, k1p
 
 def tobits(num):
     # Convert num to bits and truncate "0b" header
