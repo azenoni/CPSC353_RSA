@@ -1,3 +1,5 @@
+from operator import xor
+
 # Sbox definitions
 s0 = ([[1, 0, 3, 2],
       [3, 2, 1, 0],
@@ -10,9 +12,13 @@ s1 = ([[0, 1, 2, 3],
       [2, 1, 0, 3]])        
 
 def encrypt(m, k):
-    pass
+    k0, k1 = _generate_keys(k)
+    encrypted = cipher_blockchain(m,k0,k1)
+    return encrypted
     
 def decrypt(c, k):
+    k0 ,k1 = _generate_keys(k)
+    decrypted = cipher_blockchain(m,k0,k1)
     pass
 
 # Helper functions to use in the cipher blockchaining
@@ -22,23 +28,45 @@ def cipher_blockchain(m,k0,k1):
   #assuming m is a string of characters
   for i in m:
     num = txt_to_num(i)
-    encrypted_message.append(_encrypt_single(tobits(num),k0,k1))
+    encrypted_message.append(_encrypt_single(tobits(num,8),k0,k1))
+  enc = []
+  print encrypted_message
+  tmp = []
+  for i in encrypted_message:
+    for j in i:
+      tmp.append(j)
+  for i in encrypted_message:
+    enc.append(frombits(i))
+
+  print "tmp is:", tmp
+  otherTMP = frombits(tmp)
+  print num_to_txt(otherTMP)
+  print enc
+  encrypted_message = []
+  for i in enc:
+    print i
+    encrypted_message.append(num_to_txt(i))
   return encrypted_message
   
 
 # Perform SDES encryption on one 8-bit element
 def _encrypt_single(x, k0, k1):
   # split message into left and right chunks
-  l = x[0:5]
-  r = x[5:8]
+  l = x[0:4]
+  r = x[4:8]
+
+  print x
+  print l
+  print r
 
   # perform first feistal function
   feistel1 = _feistal(k0,r)
 
+  print "first done"
   # build the next l function
   l_next = []
   for i in range(4):
-    l_next.append(r[i] ^ feistel1[i])
+    l_next.append(xor(r[i], feistel1[i]))
 
   # set the next r
   r_next = r
@@ -49,7 +77,7 @@ def _encrypt_single(x, k0, k1):
   # buil final l
   l_final = []
   for i in range(4):
-    l_final.append(r_next[i] ^ feistel2[i])
+    l_final.append(xor(r_next[i], feistel2[i]))
 
   # set the final r
   r_final = r_next
@@ -60,17 +88,22 @@ def _encrypt_single(x, k0, k1):
 # Perform SDES decryption on one 8-bit element
 def _decrypt_single(y, k0, k1):
   # split message into left and right chunks
-  l = y[0:5]
-  r = y[5:8]
+  l = y[0:4]
+  r = y[4:8]
 
   # perform a feistel function
   feistel1 = _feistal(k1, r)
 
+  print r
+  print feistel1
+
   # create the next l
   l_next = []
-  for i in range(5):
-    l_next.append(r[i] ^ feistel1[i])
+  for i in range(4):
+    l_next.append(xor(r[i], feistel1[i]))
 
+
+  print l_next
   # set next r
   r_next = r
 
@@ -79,8 +112,8 @@ def _decrypt_single(y, k0, k1):
 
   # get ready for final l
   l_final = []
-  for i in range(5):
-    l_final.append(r_next[i] ^ feistel2[i])
+  for i in range(4):
+    l_final.append(xor(r_next[i], feistel2[i]))
 
 
   # prepare last r
@@ -121,20 +154,29 @@ def _feistal(key, r):
     # create matricies
     n = ([[r[3],r[0],r[1],r[2]], 
         [r[1],r[2],r[3],r[0]]])
+    print("n matrix created successfully")
+    print(n)
     k = ([[key[0],key[1],key[2],key[3]],
           [key[4],key[5],key[6],key[7]]])
 
+    print("k matrix created successfully")
+    print(k)
+    print(xor(n[0][0], k[0][0]))
     # xor the n and k matricies
-    p = ([[n[0][0] ^ k[0][0]], [n[0][1] ^ k[0][1]], [n[0][2] ^ k[0][2]], [n[0][3] ^ k[0][3]],
-          [n[1][0] ^ k[1][0]], [n[1][1] ^ k[1][1]], [n[1][2] ^ k[1][2]], [n[1][3] ^ k[1][3]]])
+    p = ([[xor(n[0][0], k[0][0]), xor(n[0][1], k[0][1]), xor(n[0][2], k[0][2]), xor(n[0][3], k[0][3])],
+          [xor(n[1][0], k[1][0]), xor(n[1][1], k[1][1]), xor(n[1][2], k[1][2]), xor(n[1][3], k[1][3])]])
 
+    print("p matrix created successfully")
+    print(p)
     # perform operations for s box 0
     first_bits = [p[0][0], p[0][3]]
     first_out = frombits(first_bits)
-    secont_bits = [p[0][1], p[0][2]]
+    second_bits = [p[0][1], p[0][2]]
     second_out = frombits(second_bits)
     s_0 = s0[first_out][second_out]
 
+    print("s_0 calculated successfully")
+    print(s_0)
     # perform operations for s box 1
     first_bits = [p[1][0], p[1][3]]
     first_out = frombits(first_bits)
@@ -142,12 +184,16 @@ def _feistal(key, r):
     second_out = frombits(second_bits)
     s_1 = s1[first_out][second_out]
 
+    print("s_1 calculated successfully")
+    print(s_1)
     # convert back to bits
-    s_0_bits = tobits(s_0)
-    s_1_bits = tobits(s_1)
+    s_0_bits = tobits(s_0,2)
+    s_1_bits = tobits(s_1,2)
 
     # combine s box return values for return
     s_combined = s_0_bits + s_1_bits
+    # for i in s_1_bits:
+    #   s_combined.append(i)
     return [s_combined[1],s_combined[3],s_combined[2],s_combined[0]]
 
 
@@ -157,7 +203,7 @@ def _inv_feistal(x, k):
 
 def _generate_keys(k10):
     # Convert key to bits and truncate 
-    key = format(key, '#012b')[2:]
+    key = format(k10, '#012b')[2:]
     # Create array of bits for 10 bit key
     key_b = [int(digit) for digit in key]
 
@@ -190,17 +236,21 @@ def _generate_keys(k10):
     # return keys as a tuple
     return k0p, k1p
 
-def tobits(num):
-    # Convert num to bits and truncate "0b" header
-    num = format(num, '#010b')[2:]
+def tobits(num,bit_length):
+    # Convert num to bits and truncate "0b" header and leading 6 bits
+    num = format(num, '#010b')[(10-bit_length):]
     # Convert from bit string to integer list
     return [int(digit) for digit in num]
 
 def frombits(bits):
     num = 0
     for i in range(len(bits)):
-        if bits[-i] == 1:
-            num = num + 2 ^ (i-1) 
+        print "i: ", i
+        print "bits[i]: ", bits[i]
+        print "bits[-(i+1)]:", bits[-(i+1)]
+        if (bits[-(i+1)] == 1):
+            num = num + (2 ** (i)) 
+            print num
     return num
 
 
@@ -227,4 +277,3 @@ def num_to_txt(num_in):
   #transforms the list to a string
   m = ''.join(m)
   return m
-  
