@@ -51,6 +51,10 @@ def cipher_blockchain(m,k0,k1):
 
 # Perform SDES encryption on one 8-bit element
 def _encrypt_single(x, k0, k1):
+  
+  #step 1: Permute bits of plain text
+  x = _permute(x)
+
   # split message into left and right chunks
   l = x[0:4]
   r = x[4:8]
@@ -59,7 +63,8 @@ def _encrypt_single(x, k0, k1):
   print l
   print r
 
-  # perform first feistal function
+
+  # Step 2: perform first feistal function
   feistel1 = _feistal(k0,r)
 
   print "first done"
@@ -71,7 +76,12 @@ def _encrypt_single(x, k0, k1):
   # set the next r
   r_next = r
 
-  # perform second feistal function
+  # Step 3: Swap left and right
+  tmp = r_next
+  r_next = l_next
+  l_next = tmp
+
+  # Step 4: perform second feistal function
   feistel2 = _feistal(k1,r_next)
 
   # buil final l
@@ -82,20 +92,21 @@ def _encrypt_single(x, k0, k1):
   # set the final r
   r_final = r_next
 
-  # return combination of l_final and r_final
-  return l_final + r_final
+  # step 5: return inverse permutation of combination of l_final and r_final
+  return _inv_permute(l_final + r_final)
 
 # Perform SDES decryption on one 8-bit element
 def _decrypt_single(y, k0, k1):
+
+  #Step 1: Permute text
+  y = _permute(y)
+
   # split message into left and right chunks
   l = y[0:4]
   r = y[4:8]
 
-  # perform a feistel function
+  # Step 2: perform a feistel function
   feistel1 = _feistal(k1, r)
-
-  print r
-  print feistel1
 
   # create the next l
   l_next = []
@@ -103,11 +114,15 @@ def _decrypt_single(y, k0, k1):
     l_next.append(xor(r[i], feistel1[i]))
 
 
-  print l_next
   # set next r
   r_next = r
 
-  # perform second feistal function
+  # Step 3: Swap l and r
+  tmp = r_next
+  r_next = l_next
+  l_next = tmp
+
+  # Step 4: perform second feistal function
   feistel2 = _feistal(k0, r_next)
 
   # get ready for final l
@@ -119,8 +134,8 @@ def _decrypt_single(y, k0, k1):
   # prepare last r
   r_final = r_next
 
-  # return combined l and r
-  return l_final + r_final
+  # Step 5: return inverse permutation of combined l and r
+  return _inv_permute(l_final + r_final)
 
 
 # rotate bits as specified by definition
