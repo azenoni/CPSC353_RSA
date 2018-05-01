@@ -1,10 +1,10 @@
 import random
-# Prime p = 1983499883
-# Primitive root a = 48651
-# Private key A = 1042187964
-# Public key B = 1918098439
+# Prime p = 719
+# Primitive root a = 11
+# Private key A = 697
+# Public key B = 614
 
-def sign_message(m, p=1983499883, a=48651, A=1042187964):
+def sign_message(m, p=719, a=11, A=697):
 	s = 0
 	while s == 0:
 		k = 1
@@ -16,7 +16,7 @@ def sign_message(m, p=1983499883, a=48651, A=1042187964):
 	# if s = 0, start over 
 	return r, s
 
-def verify(r,s,m,B,a=48651):
+def verify(r,s,m,B,a=11):
 	if r < p:
 		v1 = a.powermod(m,p)
 		v2 = mod(B.powermod(r,p)*r.powermod(s,p),p)

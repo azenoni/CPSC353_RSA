@@ -1,6 +1,6 @@
 # CPSC353_RSA
-P = 1983499883
+Prime P = 719
 
-a = 48651
+Primitive root a = 11
 
-B = 1918098439
+El Gamal public key B = 614

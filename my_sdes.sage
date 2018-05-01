@@ -1,4 +1,5 @@
 from operator import xor
+load("convert.sage")
 
 # Sbox definitions
 s0 = ([[1, 0, 3, 2],
@@ -17,9 +18,9 @@ def encrypt(m, k):
     return encrypted
     
 def decrypt(c, k):
-    k0 ,k1 = _generate_keys(k)
+    k0, k1 = _generate_keys(k)
     decrypted = cipher_blockchain(m,k0,k1)
-    pass
+    return decrypted
 
 # Helper functions to use in the cipher blockchaining
 # m is cipher message, k0 k1 are keys
@@ -28,23 +29,23 @@ def cipher_blockchain(m,k0,k1):
   #assuming m is a string of characters
   for i in m:
     num = txt_to_num(i)
-    encrypted_message.append(_encrypt_single(tobits(num,8),k0,k1))
+    encrypted_message.append(_encrypt_single(_tobits(num,8),k0,k1))
   enc = []
-  print encrypted_message
+  #print encrypted_message
   tmp = []
   for i in encrypted_message:
     for j in i:
       tmp.append(j)
   for i in encrypted_message:
-    enc.append(frombits(i))
+    enc.append(_frombits(i))
 
-  print "tmp is:", tmp
-  otherTMP = frombits(tmp)
-  print num_to_txt(otherTMP)
-  print enc
+  #print "tmp is:", tmp
+  otherTMP = _frombits(tmp)
+  #print num_to_txt(otherTMP)
+  #print enc
   encrypted_message = []
   for i in enc:
-    print i
+    #print i
     encrypted_message.append(num_to_txt(i))
   return encrypted_message
   
@@ -52,42 +53,33 @@ def cipher_blockchain(m,k0,k1):
 # Perform SDES encryption on one 8-bit element
 def _encrypt_single(x, k0, k1):
   
-  #step 1: Permute bits of plain text
+  # Permute bits of plain text
   x = _permute(x)
 
   # split message into left and right chunks
   l = x[0:4]
   r = x[4:8]
 
-  print x
-  print l
-  print r
+  # Perform first feistal function
+  feistal1 = _feistal(k0,r)
 
+  # Build next layer with swap
 
-  # Step 2: perform first feistal function
-  feistel1 = _feistal(k0,r)
-
-  print "first done"
-  # build the next l function
-  l_next = []
+  # Build the r next
+  r_next = []
   for i in range(4):
-    l_next.append(xor(r[i], feistel1[i]))
+    r_next.append(xor(l[i], feistal1[i]))
 
-  # set the next r
-  r_next = r
-
-  # Step 3: Swap left and right
-  tmp = r_next
-  r_next = l_next
-  l_next = tmp
+  # set the next l
+  l_next = r
 
   # Step 4: perform second feistal function
-  feistel2 = _feistal(k1,r_next)
+  feistal2 = _feistal(k1,r_next)
 
-  # buil final l
+  # build final l
   l_final = []
   for i in range(4):
-    l_final.append(xor(r_next[i], feistel2[i]))
+    l_final.append(xor(l_next[i], feistal2[i]))
 
   # set the final r
   r_final = r_next
@@ -105,33 +97,26 @@ def _decrypt_single(y, k0, k1):
   l = y[0:4]
   r = y[4:8]
 
-  # Step 2: perform a feistel function
-  feistel1 = _feistal(k1, r)
+  # Perform a feistal function with second key
+  feistal1 = _feistal(k1, r)
 
   # create the next l
-  l_next = []
+  r_next = []
   for i in range(4):
-    l_next.append(xor(r[i], feistel1[i]))
-
+    r_next.append(xor(l[i], feistal1[i]))
 
   # set next r
-  r_next = r
+  l_next = r
 
-  # Step 3: Swap l and r
-  tmp = r_next
-  r_next = l_next
-  l_next = tmp
+  # Perform second feistal function with first key
+  feistal2 = _feistal(k0, r_next)
 
-  # Step 4: perform second feistal function
-  feistel2 = _feistal(k0, r_next)
-
-  # get ready for final l
+  # Build the final l
   l_final = []
   for i in range(4):
-    l_final.append(xor(r_next[i], feistel2[i]))
+    l_final.append(xor(l_next[i], feistal2[i]))
 
-
-  # prepare last r
+  # set the last r
   r_final = r_next
 
   # Step 5: return inverse permutation of combined l and r
@@ -169,52 +154,35 @@ def _feistal(key, r):
     # create matricies
     n = ([[r[3],r[0],r[1],r[2]], 
         [r[1],r[2],r[3],r[0]]])
-    print("n matrix created successfully")
-    print(n)
+
     k = ([[key[0],key[1],key[2],key[3]],
           [key[4],key[5],key[6],key[7]]])
 
-    print("k matrix created successfully")
-    print(k)
-    print(xor(n[0][0], k[0][0]))
     # xor the n and k matricies
     p = ([[xor(n[0][0], k[0][0]), xor(n[0][1], k[0][1]), xor(n[0][2], k[0][2]), xor(n[0][3], k[0][3])],
           [xor(n[1][0], k[1][0]), xor(n[1][1], k[1][1]), xor(n[1][2], k[1][2]), xor(n[1][3], k[1][3])]])
 
-    print("p matrix created successfully")
-    print(p)
     # perform operations for s box 0
     first_bits = [p[0][0], p[0][3]]
-    first_out = frombits(first_bits)
+    first_out = _frombits(first_bits)
     second_bits = [p[0][1], p[0][2]]
-    second_out = frombits(second_bits)
+    second_out = _frombits(second_bits)
     s_0 = s0[first_out][second_out]
 
-    print("s_0 calculated successfully")
-    print(s_0)
     # perform operations for s box 1
     first_bits = [p[1][0], p[1][3]]
-    first_out = frombits(first_bits)
+    first_out = _frombits(first_bits)
     second_bits = [p[1][1], p[1][2]]
-    second_out = frombits(second_bits)
+    second_out = _frombits(second_bits)
     s_1 = s1[first_out][second_out]
 
-    print("s_1 calculated successfully")
-    print(s_1)
     # convert back to bits
-    s_0_bits = tobits(s_0,2)
-    s_1_bits = tobits(s_1,2)
+    s_0_bits = _tobits(s_0,2)
+    s_1_bits = _tobits(s_1,2)
 
     # combine s box return values for return
     s_combined = s_0_bits + s_1_bits
-    # for i in s_1_bits:
-    #   s_combined.append(i)
     return [s_combined[1],s_combined[3],s_combined[2],s_combined[0]]
-
-
-# May not be neccessary
-def _inv_feistal(x, k):
-    pass
 
 def _generate_keys(k10):
     # Convert key to bits and truncate 
@@ -251,44 +219,19 @@ def _generate_keys(k10):
     # return keys as a tuple
     return k0p, k1p
 
-def tobits(num,bit_length):
+# Helper function to convert numeric value to a list of bits
+# Assumes bit length is less than or equal to 10
+def _tobits(num,bit_length):
     # Convert num to bits and truncate "0b" header and leading 6 bits
-    num = format(num, '#010b')[(10-bit_length):]
+    num = format(num, '#012b')[(12-bit_length):]
     # Convert from bit string to integer list
     return [int(digit) for digit in num]
 
-def frombits(bits):
+# Find the numeric value contained by a list of bits by adding
+# 2^i for each i position that is 1
+def _frombits(bits):
     num = 0
     for i in range(len(bits)):
-        print "i: ", i
-        print "bits[i]: ", bits[i]
-        print "bits[-(i+1)]:", bits[-(i+1)]
-        if (bits[-(i+1)] == 1):
+        if int(str(bits[-(i+1)])) == 1:
             num = num + (2 ** (i)) 
-            print num
     return num
-
-
-#msg_in is a string
-def txt_to_num(msg_in):      
-  #transforms string to the indices of each letter in the 8-bit ASCII table
-  msg_idx = map(ord,msg_in)
-  #computes the base 256 integer formed from the indices transformed to decimal.
-  #each digit in the list is multiplied by the respective power of 256 from
-  #right to left.  For example, [64,64] = 256^1 * 64 + 256^0 * 64
-  num = ZZ(msg_idx,256)
-  return num 
-
-#Converts a digit sequence to a string
-#Return the string
-
-#num_in is a decimal integer composed as described above 
-def num_to_txt(num_in):
-  #returns the list described above 
-  msg_idx = num_in.digits(256)
-  #maps each index to its associated character in the ascii table 
-  m = map(chr,msg_idx)
-  print m
-  #transforms the list to a string
-  m = ''.join(m)
-  return m
