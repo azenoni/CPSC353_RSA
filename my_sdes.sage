@@ -1,5 +1,7 @@
 from operator import xor
-load("convert.sage")
+from sage.crypto.util import ascii_to_bin
+from sage.crypto.util import bin_to_ascii
+import random
 
 # Sbox definitions
 s0 = ([[1, 0, 3, 2],
@@ -10,45 +12,63 @@ s0 = ([[1, 0, 3, 2],
 s1 = ([[0, 1, 2, 3],
       [2, 0, 1, 3],
       [3, 0, 1, 0],
-      [2, 1, 0, 3]])        
+      [2, 1, 0, 3]])      
 
-def encrypt(m, k):
+def encrypt(m, k, IV):
     k0, k1 = _generate_keys(k)
-    encrypted = cipher_blockchain(m,k0,k1)
-    return encrypted
+    encrypted = []
+    # Get binary message as list as integers
+    binary = list(ascii_to_bin(m))
+    # We have to cast each digit to a string first due to the way 
+    # the binary is created in sage
+    binary = [int(str(digit)) for digit in binary]
+
+    # Get the number of blocks in the message
+    m_length = len(binary) / 8
+
+    # Set the initial c block to be the initial vector
+    c_block = IV
+    for i in range(m_length):
+      # Get block
+      m_block = binary[i*8:i*8+8]
+      # Apply exclusive or with last c_block
+      for j in range(8):
+        m_block[j] = xor(m_block[j], c_block[j])
+      
+      # Encrypt the block and append to the encryption
+      c_block = _encrypt_single(m_block, k0, k1)
+      for j in range(8):
+        encrypted.append(c_block[j])
+
+    return bin_to_ascii(encrypted)
     
-def decrypt(c, k):
+def decrypt(c, k, IV):
     k0, k1 = _generate_keys(k)
-    decrypted = cipher_blockchain(m,k0,k1)
-    return decrypted
+    decrypted = []
 
-# Helper functions to use in the cipher blockchaining
-# m is cipher message, k0 k1 are keys
-def cipher_blockchain(m,k0,k1):
-  encrypted_message = []
-  #assuming m is a string of characters
-  for i in m:
-    num = txt_to_num(i)
-    encrypted_message.append(_encrypt_single(_tobits(num,8),k0,k1))
-  enc = []
-  #print encrypted_message
-  tmp = []
-  for i in encrypted_message:
-    for j in i:
-      tmp.append(j)
-  for i in encrypted_message:
-    enc.append(_frombits(i))
+    # Get binary ciphertext as list of integers
+    binary = list(ascii_to_bin(c))
+    binary = [int(str(digit)) for digit in binary]
 
-  #print "tmp is:", tmp
-  otherTMP = _frombits(tmp)
-  #print num_to_txt(otherTMP)
-  #print enc
-  encrypted_message = []
-  for i in enc:
-    #print i
-    encrypted_message.append(num_to_txt(i))
-  return encrypted_message
-  
+    # Get the number of blocks in the ciphertext
+    c_length = len(binary) / 8
+
+    c_block = IV
+    for i in range(c_length):
+      # Get next ciphertext
+      c_next = binary[i*8:i*8+8]
+
+      # Decrypt the block and append to the decryption
+      m_block = _decrypt_single(c_next,k0,k1)
+      
+      # Apply exclusive or and append to decrypted
+      for j in range(8):
+        decrypted.append(xor(m_block[j], c_block[j]))
+        
+      # Set next c block to be XORed
+      c_block = c_next
+
+    return bin_to_ascii(decrypted)  
 
 # Perform SDES encryption on one 8-bit element
 def _encrypt_single(x, k0, k1):
@@ -235,3 +255,6 @@ def _frombits(bits):
         if int(str(bits[-(i+1)])) == 1:
             num = num + (2 ** (i)) 
     return num
+
+# Create the initial vector
+IV = _tobits(random.randint(1,255),8)
