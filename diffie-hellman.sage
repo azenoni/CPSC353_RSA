@@ -1,5 +1,8 @@
 import random
 
+# i+1 = 345
+# I+1 = 466
+
 def compute_shared_val_key(p,a):
 	secret_key = random.randint(1,p)
 	return secret_key, a.powermod(secret_key,p)
